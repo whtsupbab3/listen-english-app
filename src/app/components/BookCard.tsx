@@ -11,12 +11,12 @@ const DEFAULT_COVER_URL = 'https://listen-english-s3.s3.us-east-2.amazonaws.com/
 
 function BookCard({ title, author, coverUrl, duration }: BookCardProps) {
   return (
-    <div className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 text-[#dfdfdf]">
+    <div className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 text-[#dfdfdf] cursor-pointer">
       <div className="relative aspect-[3/4]">
         <img 
           height={300}
           width={300}
-          src={DEFAULT_COVER_URL} 
+          src={coverUrl || DEFAULT_COVER_URL} 
           alt={`${title} cover`} 
           className="w-full h-full object-cover"
         />
@@ -25,7 +25,7 @@ function BookCard({ title, author, coverUrl, duration }: BookCardProps) {
         </div>
       </div>
       <div className="p-4">
-        <h3 className="text-lg font-semibold mb-1 truncate">{title}</h3>
+        <h3 className="text-lg font-semibold mb-1 line-clamp-2 min-h-[3.5rem]">{title}</h3>
         <p className="text-sm text-[#dfdfdf]">{author}</p>
       </div>
     </div>
