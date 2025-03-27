@@ -26,9 +26,9 @@ function parseSrt(srtContent: string): SubtitleItem[] {
     const id = parseInt(lines[0]);
     const [startTime, endTime] = lines[1].split(' --> ').map(parseSrtTimestamp);
     const text = lines.slice(2).join(' ')
-      .replace(/"/g, '') // Remove quotes
-      .replace(/\s+/g, ' ') // Normalize whitespace
-      .replace(/—/g, '-') // Normalize dashes
+      .replace(/"/g, '') 
+      .replace(/\s+/g, ' ') 
+      .replace(/—/g, '-') 
       .trim();
     return { id, startTime, endTime, text };
   });
@@ -36,15 +36,14 @@ function parseSrt(srtContent: string): SubtitleItem[] {
 
 function normalizeText(text: string): string {
   return text
-    .replace(/[.,!?'"]/g, '') // Remove punctuation
-    .replace(/—/g, '-') // Normalize dashes
-    .replace(/\s+/g, ' ') // Normalize whitespace
+    .replace(/[.,!?'"]/g, '') 
+    .replace(/—/g, '-') 
+    .replace(/\s+/g, ' ')
     .toLowerCase()
     .trim();
 }
 
 function splitIntoSentences(text: string): string[] {
-  // Split on sentence endings but keep the punctuation
   return text.split(/(?<=[.!?])\s+/);
 }
 
@@ -140,16 +139,13 @@ export default function Reader() {
     const norm1 = normalizeText(text1);
     const norm2 = normalizeText(text2);
     
-    // For very short texts, require exact match
     if (norm1.length < 10 || norm2.length < 10) {
       return norm1 === norm2;
     }
     
-    // For longer texts, allow partial matches
     return (
       norm1.includes(norm2) ||
       norm2.includes(norm1) ||
-      // Check for partial matches at start or end
       norm1.substring(0, Math.min(20, norm1.length)) === norm2.substring(0, Math.min(20, norm2.length)) ||
       norm1.substring(Math.max(0, norm1.length - 20)) === norm2.substring(Math.max(0, norm2.length - 20))
     );
@@ -176,7 +172,6 @@ export default function Reader() {
     const paragraphs = text.split('\n').filter(p => p.trim());
 
     return paragraphs.map((paragraph, index) => {
-      // Special handling for chapter title (first two paragraphs)
       if (index === 0) {
         return (
           <h1 key={index} className="chapter-title">
