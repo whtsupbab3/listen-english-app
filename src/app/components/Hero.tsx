@@ -16,10 +16,10 @@ const Hero: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto text-center">
           <h1 className="text-4xl font-bold text-[#fea900] mb-4">
-            Вивчай англійську через читання
+            Вивчай англійську cлухаючи
           </h1>
           <p className="text-[#dfdfdf] text-lg mb-8">
-            Читай книги англійською та покращуй свої навички. Завантажуй свої улюблені книги та насолоджуйся процесом навчання.
+          Читай і слухай книги англійською одночасно, щоб покращити свої навички. Завантажуй улюблені книги та отримуй AI-згенероване аудіо для тренування сприймання на слух.
           </p>
           <button
             onClick={() => setIsUploadModalOpen(true)}
