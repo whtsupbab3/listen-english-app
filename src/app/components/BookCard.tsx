@@ -2,6 +2,7 @@
 
 import { Audiobook } from '@/types';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface BookCardProps {
   audiobook: Audiobook;
@@ -11,6 +12,7 @@ const DEFAULT_COVER_URL = 'https://listen-english-s3.s3.us-east-2.amazonaws.com/
 
 function BookCard({ audiobook }: BookCardProps) {
   const [duration, setDuration] = useState<string>('');
+  const router = useRouter();
   
   useEffect(() => {
     const fetchAudioDuration = async () => {
@@ -40,7 +42,10 @@ function BookCard({ audiobook }: BookCardProps) {
   }, [audiobook.audioUrl]);
 
   return (
-    <div className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 text-[#dfdfdf] cursor-pointer">
+    <div 
+      onClick={() => router.push(`/book/${audiobook.id}`)}
+      className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 text-[#dfdfdf] cursor-pointer"
+    >
       <div className="relative aspect-[3/4]">
         <img 
           height={300}

@@ -1,69 +1,60 @@
 'use client'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react';
+import { Audiobook } from '@/types';
+import { SubtitleItem } from '@/types';
+import { parseSrt, splitIntoSentences, normalizeText } from '@/utils';
 
-interface SubtitleItem {
-  id: number;
-  startTime: number;
-  endTime: number;
-  text: string;
+interface ReaderProps {
+  book: Audiobook;
 }
 
-function parseSrtTimestamp(timestamp: string): number {
-  const [hours, minutes, seconds] = timestamp.split(':');
-  const [secs, ms] = seconds.split(',');
-  return (
-    parseInt(hours) * 3600000 +
-    parseInt(minutes) * 60000 +
-    parseInt(secs) * 1000 +
-    parseInt(ms)
-  );
+interface PageContent {
+  title?: string;
+  subtitle?: string;
+  paragraphs: string[];
 }
 
-function parseSrt(srtContent: string): SubtitleItem[] {
-  const blocks = srtContent.trim().split('\n\n');
-  return blocks.map(block => {
-    const lines = block.split('\n');
-    const id = parseInt(lines[0]);
-    const [startTime, endTime] = lines[1].split(' --> ').map(parseSrtTimestamp);
-    const text = lines.slice(2).join(' ')
-      .replace(/"/g, '') 
-      .replace(/\s+/g, ' ') 
-      .replace(/—/g, '-') 
-      .trim();
-    return { id, startTime, endTime, text };
-  });
-}
+const LINES_PER_PAGE = 30; 
 
-function normalizeText(text: string): string {
-  return text
-    .replace(/[.,!?'"]/g, '') 
-    .replace(/—/g, '-') 
-    .replace(/\s+/g, ' ')
-    .toLowerCase()
-    .trim();
-}
-
-function splitIntoSentences(text: string): string[] {
-  return text.split(/(?<=[.!?])\s+/);
-}
-
-export default function Reader() {
+export default function Reader({ book }: ReaderProps) {
   const [subtitles, setSubtitles] = useState<SubtitleItem[]>([]);
   const [text, setText] = useState('');
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pages, setPages] = useState<PageContent[]>([]);
+  const [autoFlip, setAutoFlip] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const pageTextCache = useRef<Map<number, string[]>>(new Map());
 
   useEffect(() => {
     setIsLoading(true);
     setError(null);
 
-    fetch('https://listen-english-s3.s3.us-east-2.amazonaws.com/srt-files/FiveOnATreasureIsland1-3.srt')
+    if (!book.srtFileUrl) {
+      setError('SRT file URL is missing');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!book.bookUrl) {
+      setError('Book text file URL is missing');
+      setIsLoading(false);
+      return;
+    }
+
+    if (!book.audioUrl) {
+      setError('Audio file URL is missing');
+      setIsLoading(false);
+      return;
+    }
+
+    fetch(book.srtFileUrl)
       .then(response => {
         if (!response.ok) {
-          throw new Error(`Помилка завантаження SRT файлу: ${response.status}`);
+          throw new Error(`Error loading SRT file: ${response.status}`);
         }
         return response.text();
       })
@@ -75,11 +66,10 @@ export default function Reader() {
         setError(error.message);
       });
 
-    // Load text file for display
-    fetch('https://listen-english-s3.s3.us-east-2.amazonaws.com/books/FiveOnATreasureIsland1-3.txt')
+    fetch(book.bookUrl)
       .then(response => {
         if (!response.ok) {
-          throw new Error(`Помилка завантаження текстового файлу: ${response.status}`);
+          throw new Error(`Error loading text file: ${response.status}`);
         }
         return response.text();
       })
@@ -93,7 +83,88 @@ export default function Reader() {
       .finally(() => {
         setIsLoading(false);
       });
-  }, []);
+  }, [book]);
+
+  useEffect(() => {
+    if (pages.length > 0) {
+      pages.forEach((page, index) => {
+        const normalizedParagraphs = page.paragraphs.map(p => 
+          normalizeText(p)
+        );
+        pageTextCache.current.set(index, normalizedParagraphs);
+      });
+    }
+  }, [pages]);
+
+  useEffect(() => {
+    if (!autoFlip || !isPlaying || !currentTime) return;
+
+    const currentSubtitle = getCurrentSubtitle();
+    if (currentSubtitle) {
+      const normalizedSubtitle = normalizeText(currentSubtitle.text);
+
+      let foundPage = -1;
+      for (let i = 0; i < pages.length; i++) {
+        const pageParagraphs = pageTextCache.current.get(i) || [];
+        const foundInParagraph = pageParagraphs.some(paragraph => {
+          return paragraph.includes(normalizedSubtitle) || 
+                 normalizedSubtitle.includes(paragraph);
+        });
+
+        if (foundInParagraph) {
+          foundPage = i;
+          break;
+        }
+      }
+
+      if (foundPage !== -1 && foundPage !== currentPage) {
+        setCurrentPage(foundPage);
+      }
+    }
+  }, [currentTime, isPlaying, autoFlip, pages.length, currentPage]);
+
+  useEffect(() => {
+    if (text) {
+      const paragraphs = text.split('\n').filter(p => p.trim());
+      const pages: PageContent[] = [];
+      let currentPageParagraphs: string[] = [];
+      let currentPageLines = 0;
+
+      paragraphs.forEach((paragraph, index) => {
+        if (index === 0) {
+          pages.push({
+            title: paragraph,
+            paragraphs: []
+          });
+        } else if (index === 1) {
+          const lines = Math.ceil(paragraph.length / 80);
+          currentPageLines = lines;
+          currentPageParagraphs = [paragraph];
+        } else {
+          const lines = Math.ceil(paragraph.length / 80);
+          
+          if (currentPageLines + lines > LINES_PER_PAGE) {
+            pages.push({
+              paragraphs: [...currentPageParagraphs]
+            });
+            currentPageParagraphs = [paragraph];
+            currentPageLines = lines;
+          } else {
+            currentPageParagraphs.push(paragraph);
+            currentPageLines += lines;
+          }
+
+          if (index === paragraphs.length - 1 && currentPageParagraphs.length > 0) {
+            pages.push({
+              paragraphs: [...currentPageParagraphs]
+            });
+          }
+        }
+      });
+
+      setPages(pages);
+    }
+  }, [text]);
 
   if (isLoading) {
     return (
@@ -106,14 +177,16 @@ export default function Reader() {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500">{error}</div>
+        <div className="text-red-500">Помилка: {error}</div>
       </div>
     );
   }
 
   const handleTimeUpdate = () => {
     if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime * 1000);
+      const newTime = audioRef.current.currentTime * 1000;
+      setCurrentTime(newTime);
+      setIsPlaying(!audioRef.current.paused);
     }
   };
 
@@ -166,33 +239,34 @@ export default function Reader() {
     });
   };
 
-  const renderText = () => {
-    if (!text) return null;
+  const renderPage = () => {
+    if (!pages.length) return null;
+    
+    const page = pages[currentPage];
+    
+    if (currentPage === 0 && page.title) {
+      return (
+        <h1 className="chapter-title text-center text-4xl text-[#fea900] mt-10">
+          {page.title}
+        </h1>
+      );
+    }
 
-    const paragraphs = text.split('\n').filter(p => p.trim());
-
-    return paragraphs.map((paragraph, index) => {
-      if (index === 0) {
+    return page.paragraphs.map((paragraph, index) => {
+      const isDialogue = paragraph.includes('"');
+      
+      if (index === 0 && currentPage === 1) {
         return (
-          <h1 key={index} className="chapter-title">
-            {paragraph}
-          </h1>
-        );
-      }
-      if (index === 1) {
-        return (
-          <h2 key={index} className="chapter-subtitle">
+          <h2 key={index} className="chapter-subtitle text-center text-2xl text-[#dfdfdf] mb-8">
             {paragraph}
           </h2>
         );
       }
 
-      const isDialogue = paragraph.includes('"');
-      
       return (
         <p
           key={index}
-          className={`text-segment ${isDialogue ? 'dialogue' : ''}`}
+          className={`text-segment ${isDialogue ? 'dialogue' : ''} mb-4`}
         >
           {renderParagraph(paragraph, isDialogue)}
         </p>
@@ -200,25 +274,67 @@ export default function Reader() {
     });
   };
 
+  const goToNextPage = () => {
+    if (currentPage < pages.length - 1) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#000]">
-      <div className="container mx-auto px-4 py-10 max-w-4xl bg-[#2f2e2e]">
+      <div className="container mx-auto px-4 py-10 max-w-4xl bg-[#2f2e2e] min-h-screen flex flex-col">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-[#fea900] mb-2">Five on a Treasure Island</h1>
-          <p className="text-[#dfdfdf] text-lg">Enid Blyton</p>
+          <h1 className="text-2xl font-bold text-[#fea900] mb-2">{book.title}</h1>
+          <p className="text-[#dfdfdf] text-lg">{book.author}</p>
         </div>
-        <div className="audio-container w-full mb-8 flex justify-center">
+        <div className="audio-container w-full mb-4 flex justify-center">
           <audio
             ref={audioRef}
-            src="https://listen-english-s3.s3.us-east-2.amazonaws.com/audios/FiveOnATreasureIsland.mp3"
+            src={book.audioUrl || undefined}
             onTimeUpdate={handleTimeUpdate}
             onEnded={() => setIsPlaying(false)}
             controls
             className="w-full max-w-2xl"
           />
         </div>
-        <div className="text-container prose prose-invert mx-auto">
-          {renderText()}
+        <div className="controls mb-8 flex justify-center items-center gap-4">
+          <label className="flex items-center gap-2 text-[#dfdfdf]">
+            <input
+              type="checkbox"
+              checked={autoFlip}
+              onChange={(e) => setAutoFlip(e.target.checked)}
+              className="form-checkbox h-4 w-4 text-[#fea900] rounded border-gray-300 focus:ring-[#fea900]"
+            />
+            Автоматичне гортання сторінок
+          </label>
+        </div>
+        <div className="text-container prose prose-invert mx-auto flex-grow">
+          {renderPage()}
+        </div>
+        <div className="flex justify-between items-center mt-8 px-4">
+          <button
+            onClick={goToPreviousPage}
+            disabled={currentPage === 0}
+            className="px-4 py-2 bg-[#fea900] text-black rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Попередня сторінка
+          </button>
+          <span className="text-[#dfdfdf]">
+            Сторінка {currentPage + 1} з {pages.length}
+          </span>
+          <button
+            onClick={goToNextPage}
+            disabled={currentPage === pages.length - 1}
+            className="px-4 py-2 bg-[#fea900] text-black rounded disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Наступна сторінка
+          </button>
         </div>
       </div>
     </div>
