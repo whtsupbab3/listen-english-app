@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Audiobook } from '@/types';
 import { SubtitleItem } from '@/types';
-import { parseSrt, splitIntoSentences, normalizeText } from '@/utils';
+import { parseSrt, splitIntoSentences, normalizeText } from '../utils';
 
 interface ReaderProps {
   book: Audiobook;
@@ -228,7 +228,7 @@ export default function Reader({ book }: ReaderProps) {
     const sentences = splitIntoSentences(paragraph);
     const currentSubtitle = getCurrentSubtitle();
 
-    return sentences.map((sentence, idx) => {
+    return sentences.map((sentence: string, idx: number) => {
       const isHighlighted = currentSubtitle && isTextMatching(sentence, currentSubtitle.text);
       
       return (

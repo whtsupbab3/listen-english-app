@@ -12,7 +12,7 @@ function BookList() {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const response = await fetch('/api/audiobooks');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/audiobooks`);
         if (!response.ok) {
           throw new Error('Failed to fetch books');
         }
@@ -33,9 +33,9 @@ function BookList() {
     <div className="container mx-auto px-4 py-8">
       <h2 className="text-2xl font-bold text-[#fea900] mb-6">Доступні книги</h2>
       {isLoading ? (
-        <div className="container w-[100%] mx-auto px-4 py-8 text-center animate-pulse">Loading...</div>
+        <div className="w-[100%] mx-auto px-4 py-8 text-center animate-pulse">Завантаження...</div>
       ) : books.length === 0 ? (
-        <div className="container w-[100%] mx-auto px-4 py-8 text-center">No books available</div>
+        <div className="w-[100%] mx-auto px-4 py-8 text-center">Немає доступних книг</div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {books.map((book) => (
