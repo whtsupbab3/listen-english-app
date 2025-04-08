@@ -10,7 +10,7 @@ export async function POST(request: Request) {
 
     if (!name || !email || !password) {
       return NextResponse.json(
-        { message: 'Missing required fields' },
+        { message: 'Відсутні необхідні поля' },
         { status: 400 }
       );
     }
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
     if (existingUser.length > 0) {
       return NextResponse.json(
-        { message: 'User with this email already exists' },
+        { message: 'Користувач з таким email вже існує.' },
         { status: 400 }
       );
     }
@@ -38,14 +38,14 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json(
-      { message: 'User registered successfully' },
+      { message: 'Користувач успішно створений.' },
       { status: 201 }
     );
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
-      { status: 500 }
+     { status: 500 }
     );
   }
 }
