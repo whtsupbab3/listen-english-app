@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await db.insert(User).values({
-      id: new Date().getTime(),
+      id: new Date().toString(),
       name,
       email,
       password: hashedPassword,

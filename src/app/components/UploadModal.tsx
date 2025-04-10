@@ -19,12 +19,23 @@ export default function UploadModal({ isOpen, onClose, onUpload }: UploadModalPr
 
     const form = e.currentTarget;
     const formData = new FormData(form);
-    
+    formData.set('isPublic', (form.isPublic as HTMLInputElement).checked.toString());
+
     try {
-      await onUpload(formData);
+      const response = await fetch('/api/audiobooks', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const data = await response.json();
+      onUpload(data.book);
       onClose();
     } catch (error) {
-      console.error('Помилка завантаження:', error);
+      console.error('Upload error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -71,6 +82,16 @@ export default function UploadModal({ isOpen, onClose, onUpload }: UploadModalPr
             />
           </div>
 
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              name="isPublic"
+              id="isPublic"
+              className="w-4 h-4 rounded bg-[#1a1a1a] text-[#fea900] border border-[#444]"
+            />
+            <label htmlFor="isPublic" className="text-[#dfdfdf]">Зробити книгу публічною</label>
+          </div>
+
           <div>
             <label className="block text-[#dfdfdf] mb-2">Обкладинка книги</label>
             <div className="flex items-center space-x-4">
@@ -107,25 +128,25 @@ export default function UploadModal({ isOpen, onClose, onUpload }: UploadModalPr
             <input
               type="file"
               name="book"
-              accept=".txt,.pdf"
+              accept=".txt,.pdf,.epub"
               required
               className="w-full p-2 rounded bg-[#1a1a1a] text-[#dfdfdf] border border-[#444]"
             />
-            <p className="text-sm text-[#dfdfdf]/60 mt-1">Підтримуються формати .txt та .pdf</p>
+            <p className="text-sm text-[#dfdfdf]/60 mt-1">Підтримуються формати .txt, .pdf та .epub</p>
           </div>
 
-          <div className="flex justify-end space-x-4 mt-8">
+          <div className="flex justify-end space-x-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded text-[#dfdfdf] hover:bg-[#444]"
+              className="px-4 py-2 text-[#dfdfdf] hover:bg-[#444] rounded"
             >
               Скасувати
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 rounded bg-[#fea900] text-black font-medium hover:bg-[#fea900]/90 disabled:opacity-50"
+              className="px-4 py-2 bg-[#fea900] text-black rounded hover:bg-[#ffb824] disabled:opacity-50"
             >
               {isLoading ? 'Завантаження...' : 'Завантажити'}
             </button>
