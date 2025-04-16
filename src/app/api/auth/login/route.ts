@@ -3,6 +3,8 @@ import { db } from '@/db/drizzle';
 import { User } from '@/db/schema';
 import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
+import { SignJWT } from 'jose';
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
@@ -39,6 +41,19 @@ export async function POST(request: Request) {
     }
 
     const { password: _, ...userWithoutPassword } = user;
+
+    const token = await new SignJWT({ userId: user.id })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setExpirationTime('7d')
+      .sign(new TextEncoder().encode(process.env.JWT_SECRET));
+
+    (await cookies()).set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/',
+    });
 
     return NextResponse.json(userWithoutPassword);
   } catch (error) {

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db/drizzle";
 import { Audiobook } from "@/db/schema";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { eq, and, or } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-2',
@@ -16,16 +16,19 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const uploaderId = searchParams.get('uploaderId');
-    
-    const books = await db.selectDistinct().from(Audiobook).where(
-      uploaderId 
-        ? or(
-            eq(Audiobook.isPublic, true),
-            eq(Audiobook.uploaderId, uploaderId)
-          )
-        : eq(Audiobook.isPublic, true)
-    );
-    
+
+    const books = await db
+      .select()
+      .from(Audiobook)
+      .where(
+        uploaderId 
+          ? or(
+              eq(Audiobook.isPublic, true),
+              eq(Audiobook.uploaderId, uploaderId)
+            )
+          : eq(Audiobook.isPublic, true)
+      );
+
     return NextResponse.json(books);
   } catch (error) {
     console.error("Error fetching audiobooks:", error);
