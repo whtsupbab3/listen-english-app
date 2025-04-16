@@ -2,24 +2,32 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useUser } from '../contexts/UserContext';
+import { toast } from 'react-toastify';
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUpload: (formData: FormData) => void;
 }
 
-export default function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
+export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const [bookCover, setBookCover] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useUser();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!user) {
+      toast.error('Please log in to upload a book');
+      return;
+    }
+
     setIsLoading(true);
 
     const form = e.currentTarget;
     const formData = new FormData(form);
     formData.set('isPublic', (form.isPublic as HTMLInputElement).checked.toString());
+    formData.set('uploaderId', user?.id!);
 
     try {
       const response = await fetch('/api/audiobooks', {
@@ -31,8 +39,7 @@ export default function UploadModal({ isOpen, onClose, onUpload }: UploadModalPr
         throw new Error('Upload failed');
       }
 
-      const data = await response.json();
-      onUpload(data.book);
+      toast.success('Book uploaded successfully');
       onClose();
     } catch (error) {
       console.error('Upload error:', error);

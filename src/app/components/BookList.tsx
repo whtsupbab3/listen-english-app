@@ -3,16 +3,18 @@
 import { useEffect, useState } from 'react';
 import BookCard from './BookCard';
 import { Audiobook } from '@/types';
+import { useUser } from '../contexts/UserContext';
 
 function BookList() {
   const [books, setBooks] = useState<Audiobook[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useUser();
 
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/audiobooks`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/audiobooks?uploaderId=${user?.id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch books');
         }

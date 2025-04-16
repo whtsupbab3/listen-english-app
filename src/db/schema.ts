@@ -4,11 +4,12 @@ export const Audiobook = pgTable("audiobooks", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
   author: text("author").notNull(),
-  coverUrl: text("coverUrl"),
-  srtFileUrl: text("srtFileUrl"),
-  audioUrl: text("audioUrl"),
-  bookUrl: text("bookUrl").notNull(),
-  isPublic: boolean("isPublic").default(false).notNull(),
+  coverUrl: text("cover_url"),
+  srtFileUrl: text("srt_file_url"),
+  audioUrl: text("audio_url"),
+  bookUrl: text("book_url").notNull(),
+  isPublic: boolean("is_public").default(false).notNull(),
+  uploaderId: text("uploader_id").references(() => User.id),
 });
 
 export const User = pgTable("users", {

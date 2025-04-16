@@ -41,8 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 # database
-/migrations
-/migrations/meta
-/migrations/*
-/migrations/meta/*
+migrations/*
+migrations
+migrations/meta/*
 migrations/meta/_journal.json
+migrations/meta/0000_snapshot.json

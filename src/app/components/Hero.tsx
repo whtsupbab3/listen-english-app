@@ -2,14 +2,12 @@
 
 import React, { useState } from 'react';
 import UploadModal from './UploadModal';
+import { useUser } from '../contexts/UserContext';
+import { toast } from 'react-toastify';
 
 const Hero: React.FC = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-
-  const handleUpload = async (formData: FormData) => {
-    // TODO: Implement upload logic
-    console.log('Uploading book:', formData);
-  };
+  const { user } = useUser();
 
   return (
     <div className="bg-[#2f2e2e] py-16">
@@ -22,7 +20,13 @@ const Hero: React.FC = () => {
           Читай і слухай книги англійською одночасно, щоб покращити свої навички. Завантажуй улюблені книги та отримуй AI-згенероване аудіо для тренування сприймання на слух.
           </p>
           <button
-            onClick={() => setIsUploadModalOpen(true)}
+            onClick={() => {
+              if (!user) {
+                toast.error('Please log in to upload a book');
+                return;
+              }
+              setIsUploadModalOpen(true);
+            }}
             className="px-6 py-3 rounded-lg bg-[#fea900] text-black font-medium text-lg hover:bg-[#fea900]/90 transition-colors"
           >
             Завантажити книгу
@@ -33,7 +37,6 @@ const Hero: React.FC = () => {
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
-        onUpload={handleUpload}
       />
     </div>
   );

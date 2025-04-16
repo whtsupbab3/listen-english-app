@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db/drizzle";
 import { Audiobook } from "@/db/schema";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { eq } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'us-east-2',
@@ -12,9 +12,20 @@ const s3Client = new S3Client({
   },
 });
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const books = await db.select().from(Audiobook).where(eq(Audiobook.isPublic, true));
+    const { searchParams } = new URL(request.url);
+    const uploaderId = searchParams.get('uploaderId');
+    
+    const books = await db.selectDistinct().from(Audiobook).where(
+      uploaderId 
+        ? or(
+            eq(Audiobook.isPublic, true),
+            eq(Audiobook.uploaderId, uploaderId)
+          )
+        : eq(Audiobook.isPublic, true)
+    );
+    
     return NextResponse.json(books);
   } catch (error) {
     console.error("Error fetching audiobooks:", error);
@@ -67,6 +78,7 @@ export async function POST(request: Request) {
       coverUrl: `${process.env.AWS_CLOUDFRONT_URL}/${coverKey}`,
       bookUrl: `${process.env.AWS_CLOUDFRONT_URL}/${bookKey}`,
       isPublic: formData.get('isPublic') === 'true',
+      uploaderId: formData.get('uploaderId') as string,
     });
 
     return NextResponse.json({ book });
