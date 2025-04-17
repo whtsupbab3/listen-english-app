@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Audiobook } from '@/types';
 import { SubtitleItem } from '@/types';
 import { parseSrt, splitIntoSentences, normalizeText } from '../utils';
+import { TranslatorIcon } from './Icons';
 
 interface ReaderProps {
   book: Audiobook;
@@ -14,7 +15,97 @@ interface PageContent {
   paragraphs: string[];
 }
 
-const LINES_PER_PAGE = 30; 
+interface PopupPosition {
+  x: number;
+  y: number;
+}
+
+const LINES_PER_PAGE = 30;
+
+function TranslationPopup({ text, position }: { text: string; position: PopupPosition }) {
+  const [translation, setTranslation] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Reset state when text changes
+  useEffect(() => {
+    setTranslation(null);
+    setError(null);
+    setIsLoading(false);
+  }, [text]);
+
+  const handleTranslate = async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text,
+          targetLang: 'UK', // Ukrainian
+          sourceLang: 'EN', // English
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Translation failed');
+      }
+
+      const data = await response.json();
+      setTranslation(data.translations[0].text);
+    } catch (err) {
+      setError('Translation failed. Please try again.');
+      console.error('Translation error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div 
+      className="fixed z-50 bg-white shadow-lg rounded-lg p-2 border border-gray-200 min-w-[200px]"
+      style={{ 
+        left: position.x,
+        top: position.y,
+        transform: 'translate(-50%, -100%)',
+        marginTop: '-10px'
+      }}
+    >
+      {!translation && !isLoading && (
+        <button
+          onClick={handleTranslate}
+          className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900 cursor-pointer w-full"
+          disabled={isLoading}
+        >
+          <TranslatorIcon size={16} />
+          <span>Translate</span>
+        </button>
+      )}
+      
+      {isLoading && (
+        <div className="text-sm text-gray-600 flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-500 border-t-transparent"></div>
+          <span>Translating...</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="text-sm text-red-500">{error}</div>
+      )}
+
+      {translation && !isLoading && (
+        <div className="text-sm text-gray-900 p-1">
+          <div className="font-medium mb-1 text-gray-500">{text}</div>
+          <div>{translation}</div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Reader({ book }: ReaderProps) {
   const [subtitles, setSubtitles] = useState<SubtitleItem[]>([]);
@@ -26,6 +117,8 @@ export default function Reader({ book }: ReaderProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState<PageContent[]>([]);
   const [autoFlip, setAutoFlip] = useState(true);
+  const [selectedText, setSelectedText] = useState('');
+  const [popupPosition, setPopupPosition] = useState<PopupPosition | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const pageTextCache = useRef<Map<number, string[]>>(new Map());
 
@@ -155,21 +248,29 @@ export default function Reader({ book }: ReaderProps) {
     }
   }, [text]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-[#fea900]">Завантаження...</div>
-      </div>
-    );
-  }
+  const handleTextSelection = () => {
+    const selection = window.getSelection();
+    
+    if (!selection || selection.isCollapsed) {
+      setSelectedText('');
+      setPopupPosition(null);
+      return;
+    }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500">Помилка: {error}</div>
-      </div>
-    );
-  }
+    const text = selection.toString().trim();
+    if (text) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      
+      if (text !== selectedText) {
+        setSelectedText(text);
+        setPopupPosition({
+          x: rect.left + (rect.width / 2),
+          y: rect.top
+        });
+      }
+    }
+  };
 
   const handleTimeUpdate = () => {
     if (audioRef.current) {
@@ -184,17 +285,6 @@ export default function Reader({ book }: ReaderProps) {
       subtitle =>
         currentTime >= subtitle.startTime && currentTime <= subtitle.endTime
     );
-  };
-
-  const togglePlayPause = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
   };
 
   const isTextMatching = (text1: string, text2: string): boolean => {
@@ -287,8 +377,17 @@ export default function Reader({ book }: ReaderProps) {
             Автоматичне гортання сторінок
           </label>
         </div>
-        <div className="text-container prose prose-invert mx-auto flex-grow">
+        <div 
+          className="text-container prose prose-invert mx-auto flex-grow"
+          onMouseUp={handleTextSelection}
+        >
           {renderPage()}
+          {popupPosition && selectedText && (
+            <TranslationPopup
+              text={selectedText}
+              position={popupPosition}
+            />
+          )}
         </div>
         <div className="flex justify-between items-center mt-8 px-4">
           <button
