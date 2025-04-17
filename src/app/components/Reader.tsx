@@ -131,34 +131,23 @@ export default function Reader({ book }: ReaderProps) {
       let currentPageLines = 0;
 
       paragraphs.forEach((paragraph, index) => {
-        if (index === 0) {
+        const lines = Math.ceil(paragraph.length / 80);
+        
+        if (currentPageLines + lines > LINES_PER_PAGE) {
           pages.push({
-            title: paragraph,
-            paragraphs: []
+            paragraphs: [...currentPageParagraphs]
           });
-        } else if (index === 1) {
-          const lines = Math.ceil(paragraph.length / 80);
-          currentPageLines = lines;
           currentPageParagraphs = [paragraph];
+          currentPageLines = lines;
         } else {
-          const lines = Math.ceil(paragraph.length / 80);
-          
-          if (currentPageLines + lines > LINES_PER_PAGE) {
-            pages.push({
-              paragraphs: [...currentPageParagraphs]
-            });
-            currentPageParagraphs = [paragraph];
-            currentPageLines = lines;
-          } else {
-            currentPageParagraphs.push(paragraph);
-            currentPageLines += lines;
-          }
+          currentPageParagraphs.push(paragraph);
+          currentPageLines += lines;
+        }
 
-          if (index === paragraphs.length - 1 && currentPageParagraphs.length > 0) {
-            pages.push({
-              paragraphs: [...currentPageParagraphs]
-            });
-          }
+        if (index === paragraphs.length - 1 && currentPageParagraphs.length > 0) {
+          pages.push({
+            paragraphs: [...currentPageParagraphs]
+          });
         }
       });
 
@@ -243,25 +232,9 @@ export default function Reader({ book }: ReaderProps) {
     if (!pages.length) return null;
     
     const page = pages[currentPage];
-    
-    if (currentPage === 0 && page.title) {
-      return (
-        <h1 className="chapter-title text-center text-4xl text-[#fea900] mt-10">
-          {page.title}
-        </h1>
-      );
-    }
 
     return page.paragraphs.map((paragraph, index) => {
       const isDialogue = paragraph.includes('"');
-      
-      if (index === 0 && currentPage === 1) {
-        return (
-          <h2 key={index} className="chapter-subtitle text-center text-2xl text-[#dfdfdf] mb-8">
-            {paragraph}
-          </h2>
-        );
-      }
 
       return (
         <p
