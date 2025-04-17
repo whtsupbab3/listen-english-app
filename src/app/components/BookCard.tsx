@@ -44,7 +44,7 @@ function BookCard({ audiobook }: BookCardProps) {
   return (
     <div 
       onClick={() => router.push(`/book/${audiobook.id}`)}
-      className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 text-[#dfdfdf] cursor-pointer"
+      className="bg-[#1a1a1a] rounded-lg shadow-md overflow-hidden transition-all duration-300 ease-in-out text-[#dfdfdf] cursor-pointer hover:scale-[1.02] hover:shadow-xl hover:bg-[#222222] transform-gpu"
     >
       <div className="relative aspect-[3/4]">
         <img 
