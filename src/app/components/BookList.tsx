@@ -42,7 +42,7 @@ function BookList() {
   const privateBooks = user ? books.filter(book => !book.isPublic && book.uploaderId === user.id) : [];
 
   return (
-    <div className="container mx-auto px-4">
+    <div className="container mx-auto px-4 py-8">
       {user && privateBooks.length > 0 && (
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-[#fea900] mb-6">Ваші приватні книги</h2>

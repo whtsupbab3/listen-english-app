@@ -13,7 +13,6 @@
     "@aws-sdk/lib-storage": "^3.782.0",
     "@aws-sdk/s3-request-presigner": "^3.777.0",
     "@neondatabase/serverless": "^0.10.4",
-    "@trpc/server": "^10.45.2",
     "@types/bcryptjs": "^3.0.0",
     "@types/mime-types": "^2.1.4",
     "bcryptjs": "^3.0.2",
