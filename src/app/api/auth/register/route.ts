@@ -7,7 +7,6 @@ import { eq } from 'drizzle-orm';
 export async function POST(request: Request) {
   try {
     const { name, email, password } = await request.json();
-
     if (!name || !email || !password) {
       return NextResponse.json(
         { message: 'Відсутні необхідні поля' },
@@ -15,12 +14,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const existingUser = await db.select({
-      where: eq(User.email, email),
-    }).from(User);
-
-    console.log('existingUser', existingUser);
-
+    const existingUser = await db.select().from(User).where(eq(User.email, email));
     if (existingUser.length > 0) {
       return NextResponse.json(
         { message: 'Користувач з таким email вже існує.' },

@@ -27,8 +27,6 @@ export async function POST(request: Request) {
       );
     }
 
-
-    console.log('Uploading cover...')
     const coverKey = `covers/${Date.now()}-${coverFile.name}`;
     await s3Client.send(
       new PutObjectCommand({
@@ -38,8 +36,6 @@ export async function POST(request: Request) {
         ContentType: coverFile.type,
       })
     );
-
-    console.log('Cover uploaded');
 
     const bookKey = `books/${Date.now()}-${bookFile.name}`;
     await s3Client.send(
