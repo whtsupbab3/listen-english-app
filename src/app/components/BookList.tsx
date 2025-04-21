@@ -9,6 +9,7 @@ function BookList() {
   const [books, setBooks] = useState<Audiobook[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'public' | 'private'>('all');
   const { user } = useUser();
 
   useEffect(() => {
@@ -41,39 +42,35 @@ function BookList() {
   const publicBooks = books.filter(book => book.isPublic);
   const privateBooks = user ? books.filter(book => !book.isPublic && book.uploaderId === user.id) : [];
 
+  const filteredBooks = filter === 'all' 
+    ? [...privateBooks, ...publicBooks]
+    : filter === 'private' 
+      ? privateBooks 
+      : publicBooks;
+
   return (
     <div className="container mx-auto px-4 py-8">
-      {user && privateBooks.length > 0 && (
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-[#fea900] mb-6">Ваші приватні книги</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {privateBooks.map((book) => (
-              <BookCard
-                key={book.id}
-                audiobook={book}
-              />
-            ))}
-          </div>
+      <div className="mb-6 flex justify-end">
+        <select 
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as 'all' | 'public' | 'private')}
+          className="bg-[#3f3f3f] text-[#dfdfdf] px-4 py-2 rounded-lg border border-[#fea900] focus:outline-none focus:ring-2 focus:ring-[#fea900]"
+        >
+          <option value="all">Всі книги</option>
+          <option value="public">Публічні книги</option>
+          {user && <option value="private">Приватні книги</option>}
+        </select>
+      </div>
+
+      {isLoading ? (
+        <div className="text-center">Loading...</div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {filteredBooks.map((book) => (
+            <BookCard key={book.id} audiobook={book} />
+          ))}
         </div>
       )}
-
-      <div>
-        <h2 className="text-2xl font-bold text-[#fea900] mb-6">Публічні книги</h2>
-        {isLoading ? (
-          <div className="w-[100%] mx-auto px-4 py-8 text-center animate-pulse">Завантаження...</div>
-        ) : publicBooks.length === 0 ? (
-          <div className="w-[100%] mx-auto px-4 py-8 text-center">Немає доступних книг</div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {publicBooks.map((book) => (
-              <BookCard
-                key={book.id}
-                audiobook={book}
-              />
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
