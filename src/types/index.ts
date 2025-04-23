@@ -15,6 +15,9 @@ export interface Audiobook {
   bookUrl: string;
   isPublic: boolean;
   uploaderId: string;
+  lastViewed?: string;
+  progressInSeconds?: number;
+  finished?: boolean;
 }
 
 export type S3Folder = 'audios' | 'books' | 'covers' | 'srt-files';

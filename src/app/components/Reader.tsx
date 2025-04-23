@@ -454,7 +454,24 @@ export default function Reader({ book }: ReaderProps) {
             ref={audioRef}
             src={book.audioUrl || undefined}
             onTimeUpdate={handleTimeUpdate}
-            onEnded={() => setIsPlaying(false)}
+            onEnded={async () => {
+              setIsPlaying(false);
+              if (user && book?.id) {
+                try {
+                  await fetch("/api/userbooks/interact", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      userId: user.id,
+                      audiobookId: book.id,
+                      finished: true,
+                    }),
+                  });
+                } catch (err) {
+                  console.error("Failed to mark book as finished", err);
+                }
+              }
+            }}
             controls
             className="w-full max-w-2xl"
           />

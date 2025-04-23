@@ -10,29 +10,30 @@ const DEFAULT_COVER_URL = 'https://listen-english-s3.s3.us-east-2.amazonaws.com/
 
 interface BookCardProps {
   audiobook: Audiobook;
+  filter?: 'all' | 'public' | 'private' | 'recent';
 }
 
-function BookCard({ audiobook }: BookCardProps) {
+function BookCard({ audiobook, filter }: BookCardProps) {
   const [duration, setDuration] = useState<string>('');
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
   const { user } = useUser();
-  
+
   useEffect(() => {
     const fetchAudioDuration = async () => {
       if (!audiobook.audioUrl) return;
-      
+
       const audio = new Audio(audiobook.audioUrl);
-      
+
       audio.addEventListener('loadedmetadata', () => {
         const minutes = Math.floor(audio.duration / 60);
         const hours = Math.floor(minutes / 60);
         const remainingMinutes = minutes % 60;
-        
-        const durationString = hours > 0 
+
+        const durationString = hours > 0
           ? `${hours}h ${remainingMinutes}m`
           : `${minutes}m`;
-          
+
         setDuration(durationString);
       });
 
@@ -73,17 +74,45 @@ function BookCard({ audiobook }: BookCardProps) {
 
   const showDeleteButton = user && user.id === audiobook.uploaderId;
 
+  let lastViewedFormatted = '';
+  if (filter === 'recent' && audiobook.lastViewed) {
+    const date = new Date(audiobook.lastViewed);
+    lastViewedFormatted = date.toLocaleString('uk-UA', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  }
+
   return (
-    <div 
+    <div
       onClick={() => router.push(`/book/${audiobook.id}`)}
       className="group bg-[#1f1f1f] rounded-lg overflow-hidden shadow-lg cursor-pointer hover:scale-[1.02] transition-transform duration-200"
     >
       <div className="relative aspect-[2/3]">
-        <img 
-          src={audiobook.coverUrl || DEFAULT_COVER_URL} 
-          alt={`${audiobook.title} cover`} 
+        <img
+          src={audiobook.coverUrl || DEFAULT_COVER_URL}
+          alt={`${audiobook.title} cover`}
           className="w-full h-full object-cover"
         />
+        {/* Status Mark */}
+        {(() => {
+          let status = '';
+          if (audiobook.finished) {
+            status = 'прочитана';
+          } else if (audiobook.progressInSeconds && audiobook.progressInSeconds > 0) {
+            status = 'в процесі';
+          } else {
+            status = 'не прочитана';
+          }
+          return (
+            <span
+              className="absolute top-2 left-2 bg-[#fea900] text-black text-xs font-bold px-2 py-1 rounded shadow"
+              style={{ zIndex: 2 }}
+            >
+              {status}
+            </span>
+          );
+        })()}
         {duration && (
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
             <span className="text-white text-sm font-medium">{duration}</span>
@@ -102,6 +131,9 @@ function BookCard({ audiobook }: BookCardProps) {
         )}
       </div>
       <div className="p-4">
+        {filter === 'recent' && lastViewedFormatted && (
+          <p className="text-[#fea900] text-xs mb-1">Останній перегляд: {lastViewedFormatted}</p>
+        )}
         <h3 className="text-lg font-semibold mb-1 line-clamp-2 min-h-[3.5rem]">{audiobook.title}</h3>
         <p className="text-sm text-[#dfdfdf]">{audiobook.author}</p>
         {showDeleteButton && <p className="text-xs text-gray-500 mt-1">Ваша книга</p>}

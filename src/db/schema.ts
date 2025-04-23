@@ -25,4 +25,5 @@ export const UserBook = pgTable("user_books", {
   audiobookId: text("audiobook_id").notNull().references(() => Audiobook.id),
   progressInSeconds: integer("progress_in_seconds").default(0).notNull(),
   lastViewed: timestamp("last_viewed").notNull(),
+  finished: boolean("finished").default(false).notNull(),
 });
