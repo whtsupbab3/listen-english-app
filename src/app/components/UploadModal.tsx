@@ -61,9 +61,15 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
 
   if (!isOpen) return null;
 
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-[#2f2e2e] p-8 rounded-lg w-full max-w-md">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handleBackdropClick}>
+      <div className="bg-[#2f2e2e] p-8 rounded-lg w-full max-w-md" onClick={e => e.stopPropagation()}>
         <h2 className="text-2xl font-bold text-[#fea900] mb-6">Завантажити книгу</h2>
         
         <form onSubmit={handleSubmit} className="space-y-6">
