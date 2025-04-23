@@ -1,9 +1,10 @@
-'use client'
-import { useState, useRef, useEffect } from 'react';
-import { Audiobook } from '@/types';
-import { SubtitleItem } from '@/types';
-import { parseSrt, splitIntoSentences, normalizeText } from '../utils';
-import { TranslatorIcon } from './Icons';
+"use client";
+import { useState, useRef, useEffect } from "react";
+import { Audiobook } from "@/types";
+import { SubtitleItem } from "@/types";
+import { parseSrt, splitIntoSentences, normalizeText } from "../utils";
+import { TranslatorIcon } from "./Icons";
+import { useUser } from "../contexts/UserContext";
 
 interface ReaderProps {
   book: Audiobook;
@@ -22,7 +23,13 @@ interface PopupPosition {
 
 const LINES_PER_PAGE = 30;
 
-function TranslationPopup({ text, position }: { text: string; position: PopupPosition }) {
+function TranslationPopup({
+  text,
+  position,
+}: {
+  text: string;
+  position: PopupPosition;
+}) {
   const [translation, setTranslation] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,42 +43,42 @@ function TranslationPopup({ text, position }: { text: string; position: PopupPos
   const handleTranslate = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch('/api/translate', {
-        method: 'POST',
+      const response = await fetch("/api/translate", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           text,
-          targetLang: 'UK', // Ukrainian
-          sourceLang: 'EN', // English
+          targetLang: "UK", // Ukrainian
+          sourceLang: "EN", // English
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Translation failed');
+        throw new Error("Translation failed");
       }
 
       const data = await response.json();
       setTranslation(data.translations[0].text);
     } catch (err) {
-      setError('Translation failed. Please try again.');
-      console.error('Translation error:', err);
+      setError("Translation failed. Please try again.");
+      console.error("Translation error:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div 
+    <div
       className="fixed z-50 bg-white shadow-lg rounded-lg p-2 border border-gray-200 min-w-[200px]"
-      style={{ 
+      style={{
         left: position.x,
         top: position.y,
-        transform: 'translate(-50%, -100%)',
-        marginTop: '-10px'
+        transform: "translate(-50%, -100%)",
+        marginTop: "-10px",
       }}
     >
       {!translation && !isLoading && (
@@ -84,7 +91,7 @@ function TranslationPopup({ text, position }: { text: string; position: PopupPos
           <span>Translate</span>
         </button>
       )}
-      
+
       {isLoading && (
         <div className="text-sm text-gray-600 flex items-center gap-2">
           <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-500 border-t-transparent"></div>
@@ -92,9 +99,7 @@ function TranslationPopup({ text, position }: { text: string; position: PopupPos
         </div>
       )}
 
-      {error && (
-        <div className="text-sm text-red-500">{error}</div>
-      )}
+      {error && <div className="text-sm text-red-500">{error}</div>}
 
       {translation && !isLoading && (
         <div className="text-sm text-gray-900 p-1">
@@ -107,8 +112,9 @@ function TranslationPopup({ text, position }: { text: string; position: PopupPos
 }
 
 export default function Reader({ book }: ReaderProps) {
+  const { user } = useUser();
   const [subtitles, setSubtitles] = useState<SubtitleItem[]>([]);
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -116,60 +122,63 @@ export default function Reader({ book }: ReaderProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState<PageContent[]>([]);
   const [autoFlip, setAutoFlip] = useState(true);
-  const [selectedText, setSelectedText] = useState('');
-  const [popupPosition, setPopupPosition] = useState<PopupPosition | null>(null);
+  const [selectedText, setSelectedText] = useState("");
+  const [popupPosition, setPopupPosition] = useState<PopupPosition | null>(
+    null
+  );
   const audioRef = useRef<HTMLAudioElement>(null);
   const pageTextCache = useRef<Map<number, string[]>>(new Map());
+  const lastProgressSentRef = useRef<number>(0);
 
   useEffect(() => {
     setIsLoading(true);
     setError(null);
 
     if (!book.srtFileUrl) {
-      setError('SRT file URL is missing');
+      setError("SRT file URL is missing");
       setIsLoading(false);
       return;
     }
 
     if (!book.bookUrl) {
-      setError('Book text file URL is missing');
+      setError("Book text file URL is missing");
       setIsLoading(false);
       return;
     }
 
     if (!book.audioUrl) {
-      setError('Audio file URL is missing');
+      setError("Audio file URL is missing");
       setIsLoading(false);
       return;
     }
 
     fetch(book.srtFileUrl)
-      .then(response => {
+      .then((response) => {
         if (!response.ok) {
           throw new Error(`Error loading SRT file: ${response.status}`);
         }
         return response.text();
       })
-      .then(content => {
+      .then((content) => {
         setSubtitles(parseSrt(content));
       })
-      .catch(error => {
-        console.error('SRT error:', error);
+      .catch((error) => {
+        console.error("SRT error:", error);
         setError(error.message);
       });
 
     fetch(book.bookUrl)
-      .then(response => {
+      .then((response) => {
         if (!response.ok) {
           throw new Error(`Error loading text file: ${response.status}`);
         }
         return response.text();
       })
-      .then(content => {
+      .then((content) => {
         setText(content);
       })
-      .catch(error => {
-        console.error('Text error:', error);
+      .catch((error) => {
+        console.error("Text error:", error);
         setError(error.message);
       })
       .finally(() => {
@@ -180,7 +189,7 @@ export default function Reader({ book }: ReaderProps) {
   useEffect(() => {
     if (pages.length > 0) {
       pages.forEach((page, index) => {
-        const normalizedParagraphs = page.paragraphs.map(p => 
+        const normalizedParagraphs = page.paragraphs.map((p) =>
           normalizeText(p)
         );
         pageTextCache.current.set(index, normalizedParagraphs);
@@ -198,9 +207,11 @@ export default function Reader({ book }: ReaderProps) {
       let foundPage = -1;
       for (let i = 0; i < pages.length; i++) {
         const pageParagraphs = pageTextCache.current.get(i) || [];
-        const foundInParagraph = pageParagraphs.some(paragraph => {
-          return paragraph.includes(normalizedSubtitle) || 
-                 normalizedSubtitle.includes(paragraph);
+        const foundInParagraph = pageParagraphs.some((paragraph) => {
+          return (
+            paragraph.includes(normalizedSubtitle) ||
+            normalizedSubtitle.includes(paragraph)
+          );
         });
 
         if (foundInParagraph) {
@@ -217,17 +228,17 @@ export default function Reader({ book }: ReaderProps) {
 
   useEffect(() => {
     if (text) {
-      const paragraphs = text.split('\n').filter(p => p.trim());
+      const paragraphs = text.split("\n").filter((p) => p.trim());
       const pages: PageContent[] = [];
       let currentPageParagraphs: string[] = [];
       let currentPageLines = 0;
 
       paragraphs.forEach((paragraph, index) => {
         const lines = Math.ceil(paragraph.length / 80);
-        
+
         if (currentPageLines + lines > LINES_PER_PAGE) {
           pages.push({
-            paragraphs: [...currentPageParagraphs]
+            paragraphs: [...currentPageParagraphs],
           });
           currentPageParagraphs = [paragraph];
           currentPageLines = lines;
@@ -236,9 +247,12 @@ export default function Reader({ book }: ReaderProps) {
           currentPageLines += lines;
         }
 
-        if (index === paragraphs.length - 1 && currentPageParagraphs.length > 0) {
+        if (
+          index === paragraphs.length - 1 &&
+          currentPageParagraphs.length > 0
+        ) {
           pages.push({
-            paragraphs: [...currentPageParagraphs]
+            paragraphs: [...currentPageParagraphs],
           });
         }
       });
@@ -247,11 +261,58 @@ export default function Reader({ book }: ReaderProps) {
     }
   }, [text]);
 
+  useEffect(() => {
+    if (!user || !book?.id) return;
+    fetch("/api/userbooks/interact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: user.id,
+        audiobookId: book.id,
+      }),
+    });
+  }, [user, book?.id]);
+
+  useEffect(() => {
+    if (!user || !book?.id || !isPlaying) return;
+    const progressInSeconds = Math.floor(currentTime / 1000);
+    console.log(
+      "[UserBook Sync] Interval fired. isPlaying:",
+      isPlaying,
+      "currentTime:",
+      currentTime,
+      "progressInSeconds:",
+      progressInSeconds
+    );
+    if (progressInSeconds !== lastProgressSentRef.current) {
+      lastProgressSentRef.current = progressInSeconds;
+      fetch("/api/userbooks/interact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          audiobookId: book.id,
+          progressInSeconds,
+        }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("API error");
+          return res.json();
+        })
+        .then((data) => {
+          console.log("[UserBook Sync] Updated progress:", data);
+        })
+        .catch((err) => {
+          console.error("[UserBook Sync] Error updating progress:", err);
+        });
+    }
+  }, [isPlaying, currentTime]);
+
   const handleTextSelection = () => {
     const selection = window.getSelection();
-    
+
     if (!selection || selection.isCollapsed) {
-      setSelectedText('');
+      setSelectedText("");
       setPopupPosition(null);
       return;
     }
@@ -260,12 +321,12 @@ export default function Reader({ book }: ReaderProps) {
     if (text) {
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
-      
+
       if (text !== selectedText) {
         setSelectedText(text);
         setPopupPosition({
-          x: rect.left + (rect.width / 2),
-          y: rect.top
+          x: rect.left + rect.width / 2,
+          y: rect.top,
         });
       }
     }
@@ -274,14 +335,17 @@ export default function Reader({ book }: ReaderProps) {
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       const newTime = audioRef.current.currentTime * 1000;
-      setCurrentTime(newTime);
-      setIsPlaying(!audioRef.current.paused);
+      const diff = Math.abs(newTime - currentTime);
+      if (diff >= 5000) {
+        setCurrentTime(newTime);
+        setIsPlaying(!audioRef.current.paused);
+      }
     }
   };
 
   const getCurrentSubtitle = () => {
     return subtitles.find(
-      subtitle =>
+      (subtitle) =>
         currentTime >= subtitle.startTime && currentTime <= subtitle.endTime
     );
   };
@@ -289,16 +353,18 @@ export default function Reader({ book }: ReaderProps) {
   const isTextMatching = (text1: string, text2: string): boolean => {
     const norm1 = normalizeText(text1);
     const norm2 = normalizeText(text2);
-    
+
     if (norm1.length < 10 || norm2.length < 10) {
       return norm1 === norm2;
     }
-    
+
     return (
       norm1.includes(norm2) ||
       norm2.includes(norm1) ||
-      norm1.substring(0, Math.min(20, norm1.length)) === norm2.substring(0, Math.min(20, norm2.length)) ||
-      norm1.substring(Math.max(0, norm1.length - 20)) === norm2.substring(Math.max(0, norm2.length - 20))
+      norm1.substring(0, Math.min(20, norm1.length)) ===
+        norm2.substring(0, Math.min(20, norm2.length)) ||
+      norm1.substring(Math.max(0, norm1.length - 20)) ===
+        norm2.substring(Math.max(0, norm2.length - 20))
     );
   };
 
@@ -307,11 +373,12 @@ export default function Reader({ book }: ReaderProps) {
     const currentSubtitle = getCurrentSubtitle();
 
     return sentences.map((sentence: string, idx: number) => {
-      const isHighlighted = currentSubtitle && isTextMatching(sentence, currentSubtitle.text);
-      
+      const isHighlighted =
+        currentSubtitle && isTextMatching(sentence, currentSubtitle.text);
+
       return (
-        <span key={idx} className={isHighlighted ? 'highlighted' : ''}>
-          {sentence}{' '}
+        <span key={idx} className={isHighlighted ? "highlighted" : ""}>
+          {sentence}{" "}
         </span>
       );
     });
@@ -319,7 +386,7 @@ export default function Reader({ book }: ReaderProps) {
 
   const renderPage = () => {
     if (!pages.length) return null;
-    
+
     const page = pages[currentPage];
 
     return page.paragraphs.map((paragraph, index) => {
@@ -328,7 +395,7 @@ export default function Reader({ book }: ReaderProps) {
       return (
         <p
           key={index}
-          className={`text-segment ${isDialogue ? 'dialogue' : ''} mb-4`}
+          className={`text-segment ${isDialogue ? "dialogue" : ""} mb-4`}
         >
           {renderParagraph(paragraph, isDialogue)}
         </p>
@@ -352,7 +419,9 @@ export default function Reader({ book }: ReaderProps) {
     <div className="min-h-screen bg-[#000]">
       <div className="container mx-auto px-4 py-10 max-w-4xl bg-[#2f2e2e] min-h-screen flex flex-col">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-[#fea900] mb-2">{book.title}</h1>
+          <h1 className="text-2xl font-bold text-[#fea900] mb-2">
+            {book.title}
+          </h1>
           <p className="text-[#dfdfdf] text-lg">{book.author}</p>
         </div>
         <div className="audio-container w-full mb-4 flex justify-center">
@@ -376,16 +445,13 @@ export default function Reader({ book }: ReaderProps) {
             Автоматичне гортання сторінок
           </label>
         </div>
-        <div 
+        <div
           className="text-container prose prose-invert mx-auto flex-grow"
           onMouseUp={handleTextSelection}
         >
           {renderPage()}
           {popupPosition && selectedText && (
-            <TranslationPopup
-              text={selectedText}
-              position={popupPosition}
-            />
+            <TranslationPopup text={selectedText} position={popupPosition} />
           )}
         </div>
         <div className="flex justify-between items-center mt-8 px-4">
