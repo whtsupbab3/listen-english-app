@@ -1,4 +1,4 @@
-import { text, pgTable, integer, boolean } from "drizzle-orm/pg-core";
+import { text, pgTable, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 
 export const Audiobook = pgTable("audiobooks", {
   id: text("id").primaryKey(),
@@ -24,4 +24,5 @@ export const UserBook = pgTable("user_books", {
   userId: text("user_id").notNull().references(() => User.id),
   audiobookId: text("audiobook_id").notNull().references(() => Audiobook.id),
   progressInSeconds: integer("progress_in_seconds").default(0).notNull(),
+  lastViewed: timestamp("last_viewed").notNull(),
 });

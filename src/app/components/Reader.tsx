@@ -27,7 +27,6 @@ function TranslationPopup({ text, position }: { text: string; position: PopupPos
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset state when text changes
   useEffect(() => {
     setTranslation(null);
     setError(null);
