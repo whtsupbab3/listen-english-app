@@ -126,6 +126,8 @@ export default function Reader({ book }: ReaderProps) {
   const [popupPosition, setPopupPosition] = useState<PopupPosition | null>(
     null
   );
+  const [lastProgress, setLastProgress] = useState(0);
+  const [progressLoaded, setProgressLoaded] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const pageTextCache = useRef<Map<number, string[]>>(new Map());
   const lastProgressSentRef = useRef<number>(0);
@@ -307,6 +309,29 @@ export default function Reader({ book }: ReaderProps) {
         });
     }
   }, [isPlaying, currentTime]);
+
+  useEffect(() => {
+    if (!user || !book?.id) return;
+    fetch(`/api/userbooks/interact?userId=${user.id}&audiobookId=${book.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (typeof data.progressInSeconds === 'number') {
+          setLastProgress(data.progressInSeconds);
+        } else {
+          setLastProgress(0);
+        }
+        setProgressLoaded(true);
+      })
+      .catch(() => {
+        setLastProgress(0);
+        setProgressLoaded(true);
+      });
+  }, [user, book?.id]);
+
+  useEffect(() => {
+    if (!progressLoaded || !audioRef.current) return;
+    audioRef.current.currentTime = lastProgress;
+  }, [progressLoaded, lastProgress]);
 
   const handleTextSelection = () => {
     const selection = window.getSelection();
