@@ -94,7 +94,6 @@ function BookCard({ audiobook, filter }: BookCardProps) {
           alt={`${audiobook.title} cover`}
           className="w-full h-full object-cover"
         />
-        {/* Status Mark */}
         {(() => {
           let status = '';
           if (audiobook.finished) {
@@ -132,7 +131,7 @@ function BookCard({ audiobook, filter }: BookCardProps) {
       </div>
       <div className="p-4">
         {filter === 'recent' && lastViewedFormatted && (
-          <p className="text-[#fea900] text-xs mb-1">Останній перегляд: {lastViewedFormatted}</p>
+          <p className="text-[#fea900] text-xs mb-1">Переглянуто: {lastViewedFormatted}</p>
         )}
         <h3 className="text-lg font-semibold mb-1 line-clamp-2 min-h-[3.5rem]">{audiobook.title}</h3>
         <p className="text-sm text-[#dfdfdf]">{audiobook.author}</p>
