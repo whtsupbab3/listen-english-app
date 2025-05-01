@@ -95,6 +95,8 @@ function BookCard({ audiobook, filter }: BookCardProps) {
           className="w-full h-full object-cover"
         />
         {(() => {
+          if (!user) return null;
+          
           let status = '';
           if (audiobook.finished) {
             status = 'прочитана';
@@ -133,7 +135,7 @@ function BookCard({ audiobook, filter }: BookCardProps) {
         {filter === 'recent' && lastViewedFormatted && (
           <p className="text-[#fea900] text-xs mb-1">Переглянуто: {lastViewedFormatted}</p>
         )}
-        <h3 className="text-lg font-semibold mb-1 line-clamp-2 min-h-[3.5rem]">{audiobook.title}</h3>
+        <h3 className="text-base font-semibold mb-1 line-clamp-2 min-h-[3rem]">{audiobook.title}</h3>
         <p className="text-sm text-[#dfdfdf]">{audiobook.author}</p>
         {showDeleteButton && <p className="text-xs text-gray-500 mt-1">Ваша книга</p>}
       </div>
