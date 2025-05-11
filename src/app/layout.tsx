@@ -20,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="uk">
-      <body className={firaCode.className}>
+    <html lang="uk" className={firaCode.className}>
+      <body>
         <UserProvider>
           {children}
           <ToastContainer

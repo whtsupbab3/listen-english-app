@@ -36,7 +36,6 @@ function BookCard({ audiobook, filter }: BookCardProps) {
 
         setDuration(durationString);
       });
-
       audio.addEventListener('error', (e) => {
         console.error('Error loading audio:', e);
         setDuration('');

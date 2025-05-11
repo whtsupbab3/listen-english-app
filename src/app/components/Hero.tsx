@@ -27,7 +27,7 @@ const Hero: React.FC = () => {
               }
               setIsUploadModalOpen(true);
             }}
-            className="px-6 py-3 rounded-lg bg-[#fea900] text-black font-medium text-lg hover:bg-[#fea900]/90 transition-colors"
+            className="cursor-pointer px-6 py-3 rounded-lg bg-[#fea900] text-black font-medium text-lg hover:bg-[#fea900]/90 transition-colors"
           >
             Завантажити книгу
           </button>
