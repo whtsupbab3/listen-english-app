@@ -473,7 +473,8 @@ export default function Reader({ book }: ReaderProps) {
               }
             }}
             controls
-            className="w-full max-w-2xl"
+            controlsList="nodownload"
+            className="w-full max-w-2xl accent-yellow-400"
           />
         </div>
         <div className="controls mb-8 flex justify-center items-center gap-4">

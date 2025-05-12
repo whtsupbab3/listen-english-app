@@ -18,7 +18,7 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user) {
-      toast.error('Please log in to upload a book');
+      toast.error('Будь ласка, увійдіть, щоб завантажити книгу.');
       return;
     }
 
@@ -36,13 +36,13 @@ export default function UploadModal({ isOpen, onClose }: UploadModalProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        throw new Error('Завантаження не вдалося.');
       }
 
-      toast.success('Book uploaded successfully');
+      toast.success('Книга завантажена успішно. Очікуйте генерації аудіокниги.');
       onClose();
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Помилка завантаження:', error);
     } finally {
       setIsLoading(false);
     }

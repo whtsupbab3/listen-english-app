@@ -21,18 +21,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="uk" className={firaCode.className}>
-      <body>
+      <body suppressHydrationWarning>
         <UserProvider>
           {children}
-          <ToastContainer
-            position="top-right"
-            autoClose={5000}
-            closeOnClick
-            pauseOnHover
-            draggable
-            theme="dark"
-          />
         </UserProvider>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          closeOnClick
+          pauseOnHover
+          draggable
+          theme="dark"
+        />
       </body>
     </html>
   );

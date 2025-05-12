@@ -22,7 +22,7 @@ const Hero: React.FC = () => {
           <button
             onClick={() => {
               if (!user) {
-                toast.error('Please log in to upload a book');
+                toast.error('Будь ласка, увійдіть, щоб завантажити книгу.');
                 return;
               }
               setIsUploadModalOpen(true);

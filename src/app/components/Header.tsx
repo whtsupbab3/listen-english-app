@@ -37,13 +37,13 @@ export default function Header() {
                 href="/login"
                 className="px-6 py-2 rounded-lg border-2 border-[#fea900] text-[#fea900] hover:bg-[#fea900] hover:text-black transition-colors font-medium"
               >
-                Login
+                Увійти
               </Link>
               <Link
                 href="/register"
                 className="px-6 py-2 rounded-lg bg-[#fea900] text-black font-medium hover:bg-[#fea900]/90 transition-colors"
               >
-                Register
+                Реєстрація
               </Link>
             </>
           ) : (
